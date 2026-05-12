@@ -1,37 +1,47 @@
-# CLAUDE.md - Remotion Video Application Guide
+# Kinetic-Typo — router (Layer 1)
 
-## Core Concepts
+A **video rendered by code**: Remotion 4 + React 19 + TypeScript + Tailwind (via `@remotion/tailwind`). Animates the words `CREATE`, `ANIMATE`, `INSPIRE` with spring + interpolation-based motion. Renders to `out/video.mp4` at 1920×1080 @ 30 fps.
 
-**Project Structure**: Applications use a Root component defining `<Composition>` elements with properties like `durationInFrames`, `width` (1920), `height` (1080), and `fps` (30).
+## The mental shift
 
-**Frame-Based Animation**: Components access current frame numbers via `useCurrentFrame()` hook, enabling deterministic animations where frame numbers start at 0.
+Remotion components look like React but are **fundamentally different**:
+- No `useState` — components must be deterministic so frames can render in parallel.
+- No event handlers, no user input — it's a video, not an app.
+- Animation is **frame-driven**, not time-driven. Read the current frame with `useCurrentFrame()` and derive all visuals from it.
 
-## Media Elements
+## Floor plan
 
-- **OffthreadVideo**: For video content with `startFrom`, `endAt`, and `volume` props
-- **Img**: For static images
-- **Gif**: For animated GIFs (requires @remotion/gif package)
-- **Audio**: For sound with trimming and volume control
+| Folder      | What lives there                                      | Room file              |
+| ----------- | ----------------------------------------------------- | ---------------------- |
+| `src/`      | The Remotion composition (Root) + animation component | `src/CONTEXT.md`       |
+| `public/`   | Static assets reachable via `staticFile("name.ext")`  | —                      |
 
-Assets come from remote URLs or the `public/` folder using `staticFile()`.
+Root-level: `kinetic-typo.md` (longer-form notes), `package.json`, `tsconfig.json`.
 
-## Layout & Timing
+## Routing table
 
-- **AbsoluteFill**: Layers elements on top of each other
-- **Sequence**: Places elements at specific frame numbers
-- **Series**: Displays multiple elements sequentially
-- **TransitionSeries**: Adds transitions between sequences using timing functions like `springTiming()` and `linearTiming()`
+| Task                                          | Read                                                  | Skip                   |
+| --------------------------------------------- | ----------------------------------------------------- | ---------------------- |
+| Edit the animation                            | `src/CONTEXT.md`, `src/KineticTypo.tsx`               | `node_modules/`, `out/`|
+| Add a new `<Composition>` / change duration   | `src/CONTEXT.md`, `src/Root.tsx`                      | `out/`                 |
+| Add static media (img/audio/gif/video)        | `src/CONTEXT.md`, `public/`                           | `out/`                 |
+| Background context / longer reference         | `kinetic-typo.md`                                     | —                      |
 
-## Animation Helpers
+## Naming conventions
 
-- **interpolate()**: Maps frame ranges to value ranges
-- **spring()**: Provides physics-based animations with configurable damping
-- **random()**: Generates deterministic randomness using static seeds
+- One composition per file under `src/`. Export the default React component, register it in `Root.tsx` via `<Composition id="..." component={...} />`.
+- Frame numbers, not seconds. Treat `fps` as a knob you read from `useVideoConfig()`, never hard-code.
 
-## Critical Difference: Remotion vs. Interactive React
+## Commands
 
-Remotion components are fundamentally different from standard React:
-- Cannot use `useState` for interactivity
-- Must be deterministic and frame-driven
-- No event handlers or user input
-- All animations based on frame numbers
+```bash
+npm start         # Remotion Studio (browser preview + scrubber)
+npm run build     # render → out/video.mp4
+npm run upgrade   # Remotion upgrade helper
+```
+
+## Hard rules
+
+- No `useState`, no event handlers, no `Date.now()`, no `Math.random()` without a seed.
+- All randomness via Remotion's `random("seed")` so frames stay reproducible.
+- Don't commit `out/`.
